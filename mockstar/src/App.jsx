@@ -5,6 +5,7 @@ import FooterSteps from "./Components/FooterSteps";
 import AuthModal from "./Components/AuthModal";
 import Dashboard from "./Components/Dashboard";
 import BuildProfile from "./Components/BuildProfile";
+import ResumeUpload from "./Components/ResumeUpload";
 
 function App() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
@@ -66,11 +67,18 @@ function App() {
       );
     }
 
+    if (currentView === "resume-upload") {
+      return (
+        <ResumeUpload onBack={() => setCurrentView("dashboard")} />
+      );
+    }
+
     return (
       <Dashboard 
         userProfile={userProfile}
         onLogout={handleLogout}
         onEditProfile={() => setCurrentView("build-profile")}
+        onUploadResume={() => setCurrentView("resume-upload")}
       />
     );
   }

@@ -1,6 +1,6 @@
 import React from "react";
 
-const Dashboard = ({ onLogout, userProfile, onEditProfile }) => {
+const Dashboard = ({ onLogout, userProfile, onEditProfile, onUploadResume }) => {
   // No sessions yet — will be populated from real data in future
   const sessions = [];
 
@@ -91,7 +91,7 @@ const Dashboard = ({ onLogout, userProfile, onEditProfile }) => {
               Total Sessions
             </h3>
             <p className="text-xl font-mono font-semibold text-[#1C2127] h-8">
-              {userProfile?.isBuilt ? "12 Completed" : ""}
+              
             </p>
           </div>
         </div>
@@ -99,8 +99,11 @@ const Dashboard = ({ onLogout, userProfile, onEditProfile }) => {
         {/* Two Action Buttons */}
         <div className="flex flex-wrap items-center gap-4 mt-2">
           {userProfile?.isBuilt ? (
-            <button className="border border-[#1C2127] text-[#1C2127] px-6 py-3 rounded-lg font-semibold hover:bg-[#1C2127] hover:text-[#F4F5F2] active:scale-[0.98] transition-all duration-200 cursor-pointer shadow-xs">
-              Upload New Resume
+            <button
+              onClick={onUploadResume}
+              className="border border-[#1C2127] text-[#1C2127] px-6 py-3 rounded-lg font-semibold hover:bg-[#1C2127] hover:text-[#F4F5F2] active:scale-[0.98] transition-all duration-200 cursor-pointer shadow-xs"
+            >
+              Upload Resume
             </button>
           ) : (
             <button
