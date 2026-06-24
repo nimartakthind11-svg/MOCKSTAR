@@ -21,7 +21,7 @@ const injectStyles = () => {
   document.head.appendChild(s);
 };
 
-const ResumeUpload = ({ onBack }) => {
+const ResumeUpload = ({ onBack, onContinue }) => {
   injectStyles();
 
   const [uploadedFile, setUploadedFile]     = useState(null);
@@ -273,7 +273,7 @@ const ResumeUpload = ({ onBack }) => {
 
               {/* CTA */}
               <button
-                onClick={onBack}
+                onClick={onContinue || onBack}
                 style={{
                   alignSelf:"flex-start",
                   padding:"14px 32px",

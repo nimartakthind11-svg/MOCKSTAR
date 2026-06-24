@@ -6,6 +6,7 @@ import AuthModal from "./Components/AuthModal";
 import Dashboard from "./Components/Dashboard";
 import BuildProfile from "./Components/BuildProfile";
 import ResumeUpload from "./Components/ResumeUpload";
+import InterviewSetup from "./Components/InterviewSetup";
 
 function App() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
@@ -69,7 +70,22 @@ function App() {
 
     if (currentView === "resume-upload") {
       return (
-        <ResumeUpload onBack={() => setCurrentView("dashboard")} />
+        <ResumeUpload
+          onBack={() => setCurrentView("dashboard")}
+          onContinue={() => setCurrentView("interview-setup")}
+        />
+      );
+    }
+
+    if (currentView === "interview-setup") {
+      return (
+        <InterviewSetup
+          onBack={() => setCurrentView("resume-upload")}
+          onStart={(config) => {
+            // Future: pass config to interview session
+            console.log("Starting interview with config:", config);
+          }}
+        />
       );
     }
 
