@@ -1,39 +1,76 @@
 import React from 'react';
+import { useTheme } from '../context/ThemeContext';
 
 const Navbar = ({ onAuthClick }) => {
-    return(
-        <nav className="w-full flex items-center justify-between px-16 py-8">
+  const { theme, toggleTheme } = useTheme();
+  const isDark = theme === "dark";
 
-          <div className="flex items-center gap-2">
-            <div className="w-2.5 h-2.5 rounded-full bg-[#A6573F]" />
-            <span className="font-mono text-lg tracking-wide text-[#1C2127] font-semibold">
-              Mockstar by Mocktane
-            </span>
-          </div>
+  return (
+    <nav
+      className="w-full flex items-center justify-between px-16 py-8 transition-colors duration-300"
+      style={{ color: "var(--text-primary)" }}
+    >
+      {/* Logo */}
+      <div className="flex items-center gap-2 select-none">
+        <div className="w-2.5 h-2.5 rounded-full" style={{ background: "var(--accent)" }} />
+        <span
+          className="font-mono text-lg tracking-wide font-semibold"
+          style={{ color: "var(--text-primary)" }}
+        >
+          Mockstar by Mocktane
+        </span>
+      </div>
 
-          <div className="flex gap-8 text-lg text-[#5F5E5A]">
-            <a href="mailto:mocktane@gmail.com" className="hover:text-[#1C2127] transition-colors">for queries: mocktane@gmail.com</a>
-          </div>
+      {/* Center link */}
+      <div className="flex gap-8 text-lg" style={{ color: "var(--text-muted)" }}>
+        <a
+          href="mailto:mocktane@gmail.com"
+          className="transition-colors hover:underline"
+          style={{ color: "var(--text-muted)" }}
+          onMouseEnter={e => e.target.style.color = "var(--text-primary)"}
+          onMouseLeave={e => e.target.style.color = "var(--text-muted)"}
+        >
+          for queries: mocktane@gmail.com
+        </a>
+      </div>
 
-          <div className="flex items-center gap-3">
+      {/* Right actions */}
+      <div className="flex items-center gap-4">
+        {/* Theme toggle */}
+        <button
+          className="theme-toggle"
+          onClick={toggleTheme}
+          title={isDark ? "Switch to light mode" : "Switch to dark mode"}
+          aria-label="Toggle theme"
+        >
+          <span className="theme-toggle__thumb">
+            {isDark ? "🌙" : "☀️"}
+          </span>
+        </button>
 
-            <button className="w-14 h-8 rounded-full border border-[#DCDAD2] flex items-center px-1 cursor-pointer">
-              <div className="w-6 h-6 rounded-full bg-[#1C2127] text-white flex items-center justify-center text-xs">
-                ☀️
-              </div>
-            </button>
-
-            <button 
-              onClick={onAuthClick}
-              className="border border-[#1C2127] px-4 py-2 rounded-md text-lg hover:bg-[#1C2127] hover:text-[#F4F5F2] transition-all duration-200 cursor-pointer"
-            >
-              Log in/Sign up
-            </button>
-
-          </div>
-        </nav>
-
-    )
-}
+        {/* Auth button */}
+        <button
+          onClick={onAuthClick}
+          className="px-5 py-2 rounded-md text-base font-semibold transition-all duration-200 cursor-pointer"
+          style={{
+            border: "1.5px solid var(--text-primary)",
+            color: "var(--text-primary)",
+            background: "transparent",
+          }}
+          onMouseEnter={e => {
+            e.currentTarget.style.background = "var(--text-primary)";
+            e.currentTarget.style.color = "var(--bg-primary)";
+          }}
+          onMouseLeave={e => {
+            e.currentTarget.style.background = "transparent";
+            e.currentTarget.style.color = "var(--text-primary)";
+          }}
+        >
+          Log in / Sign up
+        </button>
+      </div>
+    </nav>
+  );
+};
 
 export default Navbar;

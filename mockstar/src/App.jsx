@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useCallback } from "react";
 import Navbar from "./Components/Navbar";
 import Hero from "./Components/Hero";
 import FooterSteps from "./Components/FooterSteps";
@@ -9,8 +9,9 @@ import ResumeUpload from "./Components/ResumeUpload";
 import InterviewSetup from "./Components/InterviewSetup";
 import InterviewSession from "./Components/InterviewSession";
 import PerformanceReport from "./Components/PerformanceReport";
+import { ThemeProvider, useTheme } from "./context/ThemeContext";
 
-function App() {
+function AppInner() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [currentView, setCurrentView] = useState("dashboard");
   const [signupName, setSignupName] = useState(""); // persists name from signup to login
@@ -24,6 +25,11 @@ function App() {
   const [authMode, setAuthMode] = useState("login");
   const [interviewConfig, setInterviewConfig] = useState(null);
   const [interviewTranscript, setInterviewTranscript] = useState(null);
+  const [sessions, setSessions] = useState([]);
+  const [currentSessionScore, setCurrentSessionScore] = useState(null);
+
+  // ✅ All hooks at the top level — never inside conditionals
+  const { theme, toggleTheme } = useTheme();
 
   const openAuth = (mode = "login") => {
     setAuthMode(mode);
@@ -98,7 +104,22 @@ function App() {
         <InterviewSession 
           config={interviewConfig}
           onEnd={(transcript) => {
+            // Compute score from transcript
+            const candidateMsgs = transcript.filter(m => m.role === "candidate");
+            const score = Math.min(65 + candidateMsgs.length * 5 + Math.floor(Math.random() * 10), 100);
+            setCurrentSessionScore(score);
             setInterviewTranscript(transcript);
+
+            // Record the completed session
+            const newSession = {
+              id: Date.now(),
+              role: interviewConfig?.customRole || interviewConfig?.interviewType || "Practice Session",
+              date: new Date().toLocaleDateString("en-US", { year: "numeric", month: "short", day: "numeric" }),
+              score,
+              scoreColor: score >= 80 ? "#3a8f5e" : score >= 60 ? "#b07d2e" : "#D33F3F",
+            };
+            setSessions(prev => [newSession, ...prev]);
+
             setCurrentView("performance-report");
           }}
         />
@@ -110,6 +131,7 @@ function App() {
         <PerformanceReport
           transcript={interviewTranscript}
           config={interviewConfig}
+          score={currentSessionScore}
           onBackToDashboard={() => setCurrentView("dashboard")}
         />
       );
@@ -118,16 +140,25 @@ function App() {
     return (
       <Dashboard 
         userProfile={userProfile}
+        sessions={sessions}
         onLogout={handleLogout}
         onEditProfile={() => setCurrentView("build-profile")}
         onUploadResume={() => setCurrentView("resume-upload")}
+        onStartSession={() => setCurrentView("resume-upload")}
+        theme={theme}
+        onToggleTheme={toggleTheme}
+        currentView={currentView}
+        onNavigate={setCurrentView}
       />
     );
   }
 
   return (
-    <main className="min-h-screen flex flex-col bg-[#F4F5F2] relative"> 
-      <Navbar onAuthClick={() => openAuth("login")} />
+    <main
+      className="min-h-screen flex flex-col relative"
+      style={{ background: "var(--bg-primary)" }}
+    >
+      <Navbar onAuthClick={() => openAuth("login")} onToggleTheme={toggleTheme} theme={theme} />
       <Hero onStartPractice={() => openAuth("signup")} />
       <FooterSteps />
       
@@ -139,6 +170,14 @@ function App() {
         onLoginSuccess={handleLoginSuccess}
       />
     </main>
+  );
+}
+
+function App() {
+  return (
+    <ThemeProvider>
+      <AppInner />
+    </ThemeProvider>
   );
 }
 

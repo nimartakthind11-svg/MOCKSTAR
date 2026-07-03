@@ -16,20 +16,18 @@ const injectPrintStyles = () => {
   document.head.appendChild(s);
 };
 
-const PerformanceReport = ({ transcript, config, onBackToDashboard }) => {
+const PerformanceReport = ({ transcript, config, score: scoreProp, onBackToDashboard }) => {
   useEffect(() => {
     injectPrintStyles();
   }, []);
-  const calculateScore = () => {
-    if (!transcript || transcript.length === 0) return 0;
-    const baseScore = 65;
-    const candidateMessages = transcript.filter(m => m.role === "candidate");
-    const bonus = Math.min(candidateMessages.length * 5, 25);
-    const randomFactor = Math.floor(Math.random() * 10);
-    return baseScore + bonus + randomFactor;
-  };
 
-  const score = calculateScore();
+  // Use the pre-computed score passed from App so it matches what's stored in session history.
+  // Fall back to calculating if not provided (e.g. direct render without App context).
+  const score = scoreProp ?? (() => {
+    if (!transcript || transcript.length === 0) return 0;
+    const candidateMessages = transcript.filter(m => m.role === "candidate");
+    return Math.min(65 + candidateMessages.length * 5 + Math.floor(Math.random() * 10), 100);
+  })();
 
   const handlePrint = () => {
     window.print();
