@@ -1,7 +1,7 @@
 import React, { useState, useCallback } from "react";
 import Navbar from "./Components/Navbar";
 import Hero from "./Components/Hero";
-import FooterSteps from "./Components/FooterSteps";
+import Landing from "./Components/Landing";
 import AuthModal from "./Components/AuthModal";
 import Dashboard from "./Components/Dashboard";
 import BuildProfile from "./Components/BuildProfile";
@@ -160,7 +160,7 @@ function AppInner() {
     >
       <Navbar onAuthClick={() => openAuth("login")} onToggleTheme={toggleTheme} theme={theme} />
       <Hero onStartPractice={() => openAuth("signup")} />
-      <FooterSteps />
+      <Landing onStartPractice={() => openAuth("signup")} />
       
       <AuthModal 
         isOpen={isAuthOpen} 
