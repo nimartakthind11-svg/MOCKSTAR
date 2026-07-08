@@ -83,6 +83,4 @@ export const sessionApi = {
     request("POST", `/sessions/${sessionId}/submit`, transcript),
 
   list: () => request("GET", "/sessions"),
-
-  getReport: (sessionId) => request("GET", `/sessions/${sessionId}/report`),
 };
