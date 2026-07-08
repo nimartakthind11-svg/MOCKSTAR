@@ -1,4 +1,5 @@
-import React, { useState, useCallback } from "react";
+import React, { useState, useCallback, useEffect } from "react";
+import { getToken, clearToken, profileApi, sessionApi } from "./utils/api";
 import Navbar from "./Components/Navbar";
 import Hero from "./Components/Hero";
 import Landing from "./Components/Landing";
@@ -14,7 +15,7 @@ import { ThemeProvider, useTheme } from "./context/ThemeContext";
 function AppInner() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [currentView, setCurrentView] = useState("dashboard");
-  const [signupName, setSignupName] = useState(""); // persists name from signup to login
+  const [signupName, setSignupName] = useState("");
   const [userProfile, setUserProfile] = useState({
     username: "",
     focusDomain: "",
@@ -27,9 +28,41 @@ function AppInner() {
   const [interviewTranscript, setInterviewTranscript] = useState(null);
   const [sessions, setSessions] = useState([]);
   const [currentSessionScore, setCurrentSessionScore] = useState(null);
+  const [currentSessionId, setCurrentSessionId] = useState(null);
+  const [aiReport, setAiReport] = useState(null);
 
   // ✅ All hooks at the top level — never inside conditionals
   const { theme, toggleTheme } = useTheme();
+
+  // Auto-login: if a valid token exists in localStorage, fetch the profile
+  useEffect(() => {
+    const token = getToken();
+    if (!token) return;
+    profileApi.get()
+      .then((profile) => {
+        setUserProfile({
+          username: profile.username || "",
+          focusDomain: profile.focus_domain || "",
+          coreSkills: profile.core_skills || "",
+          isBuilt: profile.is_built || false,
+        });
+        setIsLoggedIn(true);
+        // Load past sessions
+        return sessionApi.list();
+      })
+      .then((pastSessions) => {
+        if (pastSessions && pastSessions.length) {
+          setSessions(pastSessions.map((s) => ({
+            id: s.id,
+            role: s.custom_role || s.interview_type || "Practice Session",
+            date: new Date(s.created_at).toLocaleDateString("en-US", { year: "numeric", month: "short", day: "numeric" }),
+            score: s.score || 0,
+            scoreColor: (s.score || 0) >= 80 ? "#3a8f5e" : (s.score || 0) >= 60 ? "#b07d2e" : "#D33F3F",
+          })));
+        }
+      })
+      .catch(() => clearToken()); // Token expired or invalid — clear it
+  }, []);
 
   const openAuth = (mode = "login") => {
     setAuthMode(mode);
@@ -41,27 +74,40 @@ function AppInner() {
     setSignupName(name);
   };
 
-  // Called after login — transitions to dashboard using the saved signup name
-  const handleLoginSuccess = () => {
-    setUserProfile({
-      username: signupName || "User",
-      focusDomain: "",
-      coreSkills: "",
-      isBuilt: false
-    });
-    setIsLoggedIn(true);
+  // Called after login — receives real user object from API
+  const handleLoginSuccess = (user) => {
+    profileApi.get()
+      .then((profile) => {
+        setUserProfile({
+          username: profile.username || signupName || user.email?.split("@")[0] || "User",
+          focusDomain: profile.focus_domain || "",
+          coreSkills: profile.core_skills || "",
+          isBuilt: profile.is_built || false,
+        });
+        setIsLoggedIn(true);
+        return sessionApi.list();
+      })
+      .then((pastSessions) => {
+        if (pastSessions && pastSessions.length) {
+          setSessions(pastSessions.map((s) => ({
+            id: s.id,
+            role: s.custom_role || s.interview_type || "Practice Session",
+            date: new Date(s.created_at).toLocaleDateString("en-US", { year: "numeric", month: "short", day: "numeric" }),
+            score: s.score || 0,
+            scoreColor: (s.score || 0) >= 80 ? "#3a8f5e" : (s.score || 0) >= 60 ? "#b07d2e" : "#D33F3F",
+          })));
+        }
+      })
+      .catch(console.error);
   };
 
   const handleLogout = () => {
+    clearToken();
     setIsLoggedIn(false);
     setCurrentView("dashboard");
     setSignupName("");
-    setUserProfile({
-      username: "",
-      focusDomain: "",
-      coreSkills: "",
-      isBuilt: false
-    });
+    setSessions([]);
+    setUserProfile({ username: "", focusDomain: "", coreSkills: "", isBuilt: false });
   };
 
   if (isLoggedIn) {
@@ -103,23 +149,21 @@ function AppInner() {
       return (
         <InterviewSession 
           config={interviewConfig}
-          onEnd={(transcript) => {
-            // Compute score from transcript
-            const candidateMsgs = transcript.filter(m => m.role === "candidate");
-            const score = Math.min(65 + candidateMsgs.length * 5 + Math.floor(Math.random() * 10), 100);
+          onEnd={(transcript, evaluation) => {
+            const score = evaluation?.score ?? Math.min(65 + transcript.filter(m => m.role === "candidate").length * 5, 100);
             setCurrentSessionScore(score);
             setInterviewTranscript(transcript);
+            setAiReport(evaluation || null);
 
-            // Record the completed session
+            // Record the completed session in local state
             const newSession = {
-              id: Date.now(),
+              id: currentSessionId || Date.now(),
               role: interviewConfig?.customRole || interviewConfig?.interviewType || "Practice Session",
               date: new Date().toLocaleDateString("en-US", { year: "numeric", month: "short", day: "numeric" }),
               score,
               scoreColor: score >= 80 ? "#3a8f5e" : score >= 60 ? "#b07d2e" : "#D33F3F",
             };
             setSessions(prev => [newSession, ...prev]);
-
             setCurrentView("performance-report");
           }}
         />
@@ -136,7 +180,11 @@ function AppInner() {
             type: interviewConfig?.interviewType,
             difficulty: interviewConfig?.difficulty,
             questionsCount: interviewConfig?.questionCount,
-            transcript: interviewTranscript
+            transcript: interviewTranscript,
+            // AI evaluation data
+            feedback: aiReport?.feedback || null,
+            strengths: aiReport?.strengths || [],
+            weaknesses: aiReport?.weaknesses || [],
           }}
           onBackToDash={() => setCurrentView("dashboard")}
           onRetry={() => setCurrentView("interview-setup")}

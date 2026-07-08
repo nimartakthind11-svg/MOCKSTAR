@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from "react";
+import { authApi, setToken } from "../utils/api";
 
 const FEATURES = [
   {
@@ -86,6 +87,8 @@ const AuthModal = ({ isOpen, onClose, initialMode = "login", onLoginSuccess, onS
   const [name, setName] = useState("");
   const [agreeTerms, setAgreeTerms] = useState(false);
   const [shake, setShake] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const [apiError, setApiError] = useState("");
   const modalRef = useRef(null);
 
   useEffect(() => {
@@ -95,6 +98,7 @@ const AuthModal = ({ isOpen, onClose, initialMode = "login", onLoginSuccess, onS
       setPassword("");
       setName("");
       setAgreeTerms(false);
+      setApiError("");
     }
   }, [isOpen, initialMode]);
 
@@ -106,20 +110,40 @@ const AuthModal = ({ isOpen, onClose, initialMode = "login", onLoginSuccess, onS
 
   if (!isOpen) return null;
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     if (!email || !password || (mode === "signup" && (!name || !agreeTerms))) {
       setShake(true);
       setTimeout(() => setShake(false), 500);
       return;
     }
-    if (mode === "signup") {
-      if (onSignupSuccess) onSignupSuccess(name.trim());
-      setEmail(""); setPassword(""); setAgreeTerms(false);
-      setMode("login");
-    } else {
-      if (onLoginSuccess) onLoginSuccess();
-      onClose();
+    setIsLoading(true);
+    setApiError("");
+    try {
+      if (mode === "signup") {
+        // Register user → get token
+        const tokenData = await authApi.signup(email, password);
+        setToken(tokenData.access_token);
+        // Fetch user info and set default username from email
+        const user = await authApi.me();
+        if (onSignupSuccess) onSignupSuccess(name.trim() || email.split("@")[0]);
+        setEmail(""); setPassword(""); setAgreeTerms("");
+        setMode("login");
+      } else {
+        // Log in → get token
+        const tokenData = await authApi.login(email, password);
+        setToken(tokenData.access_token);
+        // Fetch real user profile
+        const user = await authApi.me();
+        if (onLoginSuccess) onLoginSuccess(user);
+        onClose();
+      }
+    } catch (err) {
+      setApiError(err.message || "Something went wrong. Please try again.");
+      setShake(true);
+      setTimeout(() => setShake(false), 500);
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -308,8 +332,11 @@ const AuthModal = ({ isOpen, onClose, initialMode = "login", onLoginSuccess, onS
                     <button type="button" className="auth-link">Forgot password?</button>
                   </div>
 
-                  <button type="submit" className="auth-submit">
-                    <span>Log In</span>
+                  {apiError && mode === "login" && (
+                    <p style={{ color: "#B84040", fontSize: 12, margin: "0 0 4px", fontFamily: "'Inter', sans-serif" }}>{apiError}</p>
+                  )}
+                  <button type="submit" className="auth-submit" disabled={isLoading}>
+                    <span>{isLoading && mode === "login" ? "Logging in…" : "Log In"}</span>
                     <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2.5">
                       <path strokeLinecap="round" strokeLinejoin="round" d="M13 7l5 5m0 0l-5 5m5-5H6" />
                     </svg>
@@ -367,8 +394,11 @@ const AuthModal = ({ isOpen, onClose, initialMode = "login", onLoginSuccess, onS
                     </label>
                   </div>
 
-                  <button type="submit" className="auth-submit">
-                    <span>Create Account</span>
+                  {apiError && mode === "signup" && (
+                    <p style={{ color: "#B84040", fontSize: 12, margin: "0 0 4px", fontFamily: "'Inter', sans-serif" }}>{apiError}</p>
+                  )}
+                  <button type="submit" className="auth-submit" disabled={isLoading}>
+                    <span>{isLoading && mode === "signup" ? "Creating account…" : "Create Account"}</span>
                     <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2.5">
                       <path strokeLinecap="round" strokeLinejoin="round" d="M13 7l5 5m0 0l-5 5m5-5H6" />
                     </svg>

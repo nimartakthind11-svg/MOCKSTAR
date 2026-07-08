@@ -1,19 +1,42 @@
 import React, { useState } from "react";
+import { profileApi } from "../utils/api";
 
 const BuildProfile = ({ initialProfile, onSave, onCancel }) => {
-  const [username, setUsername]     = useState(initialProfile.username || "");
+  const [username, setUsername]       = useState(initialProfile.username || "");
   const [focusDomain, setFocusDomain] = useState(initialProfile.focusDomain || "");
-  const [coreSkills, setCoreSkills] = useState(initialProfile.coreSkills || "");
-  const [shake, setShake]           = useState(false);
+  const [coreSkills, setCoreSkills]   = useState(initialProfile.coreSkills || "");
+  const [shake, setShake]             = useState(false);
+  const [isLoading, setIsLoading]     = useState(false);
+  const [apiError, setApiError]       = useState("");
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     if (!username.trim() || !focusDomain.trim() || !coreSkills.trim()) {
       setShake(true);
       setTimeout(() => setShake(false), 500);
       return;
     }
-    onSave({ username: username.trim(), focusDomain: focusDomain.trim(), coreSkills: coreSkills.trim(), isBuilt: true });
+    setIsLoading(true);
+    setApiError("");
+    try {
+      const updated = await profileApi.update(
+        username.trim(),
+        focusDomain.trim(),
+        coreSkills.trim()
+      );
+      onSave({
+        username: updated.username,
+        focusDomain: updated.focus_domain || focusDomain.trim(),
+        coreSkills: updated.core_skills || coreSkills.trim(),
+        isBuilt: updated.is_built,
+      });
+    } catch (err) {
+      setApiError(err.message || "Failed to save profile. Please try again.");
+      setShake(true);
+      setTimeout(() => setShake(false), 500);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const fields = [
