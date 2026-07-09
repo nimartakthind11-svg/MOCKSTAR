@@ -48,6 +48,32 @@ const FieldIcons = {
   ),
 };
 
+const Spinner = () => (
+  <svg
+    className="auth-spinner"
+    width="16"
+    height="16"
+    viewBox="0 0 24 24"
+    fill="none"
+    aria-hidden="true"
+  >
+    <circle
+      cx="12"
+      cy="12"
+      r="9"
+      stroke="currentColor"
+      strokeWidth="2.5"
+      strokeOpacity="0.25"
+    />
+    <path
+      d="M21 12a9 9 0 00-9-9"
+      stroke="currentColor"
+      strokeWidth="2.5"
+      strokeLinecap="round"
+    />
+  </svg>
+);
+
 const EyeIcon = ({ open }) =>
   open ? (
     <svg width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2">
@@ -94,6 +120,7 @@ const AuthModal = ({ isOpen, onClose, initialMode = "login", onLoginSuccess, onS
   useEffect(() => {
     if (isOpen) {
       setMode(initialMode);
+
       setEmail("");
       setPassword("");
       setName("");
@@ -133,10 +160,12 @@ const AuthModal = ({ isOpen, onClose, initialMode = "login", onLoginSuccess, onS
         // Log in → get token
         const tokenData = await authApi.login(email, password);
         setToken(tokenData.access_token);
+
         // Fetch real user profile
         const user = await authApi.me();
         if (onLoginSuccess) onLoginSuccess(user);
         onClose();
+
       }
     } catch (err) {
       setApiError(err.message || "Something went wrong. Please try again.");
@@ -187,6 +216,7 @@ const AuthModal = ({ isOpen, onClose, initialMode = "login", onLoginSuccess, onS
   ];
 
   return (
+    <>
     <div className="auth-backdrop animate-fadeIn" onClick={handleBackdropClick}>
       <div className="auth-orb auth-orb--1" aria-hidden="true" />
       <div className="auth-orb auth-orb--2" aria-hidden="true" />
@@ -336,10 +366,14 @@ const AuthModal = ({ isOpen, onClose, initialMode = "login", onLoginSuccess, onS
                     <p style={{ color: "#B84040", fontSize: 12, margin: "0 0 4px", fontFamily: "'Inter', sans-serif" }}>{apiError}</p>
                   )}
                   <button type="submit" className="auth-submit" disabled={isLoading}>
-                    <span>{isLoading && mode === "login" ? "Logging in…" : "Log In"}</span>
-                    <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2.5">
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M13 7l5 5m0 0l-5 5m5-5H6" />
-                    </svg>
+                    <span>{isLoading && mode === "login" ? "Processing..." : "Log In"}</span>
+                    {isLoading && mode === "login" ? (
+                      <Spinner />
+                    ) : (
+                      <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2.5">
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M13 7l5 5m0 0l-5 5m5-5H6" />
+                      </svg>
+                    )}
                   </button>
                 </form>
 
@@ -398,10 +432,14 @@ const AuthModal = ({ isOpen, onClose, initialMode = "login", onLoginSuccess, onS
                     <p style={{ color: "#B84040", fontSize: 12, margin: "0 0 4px", fontFamily: "'Inter', sans-serif" }}>{apiError}</p>
                   )}
                   <button type="submit" className="auth-submit" disabled={isLoading}>
-                    <span>{isLoading && mode === "signup" ? "Creating account…" : "Create Account"}</span>
-                    <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2.5">
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M13 7l5 5m0 0l-5 5m5-5H6" />
-                    </svg>
+                    <span>{isLoading && mode === "signup" ? "Processing..." : "Create Account"}</span>
+                    {isLoading && mode === "signup" ? (
+                      <Spinner />
+                    ) : (
+                      <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2.5">
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M13 7l5 5m0 0l-5 5m5-5H6" />
+                      </svg>
+                    )}
                   </button>
                 </form>
               </div>
@@ -410,6 +448,7 @@ const AuthModal = ({ isOpen, onClose, initialMode = "login", onLoginSuccess, onS
         </div>
       </div>
     </div>
+  </>
   );
 };
 
