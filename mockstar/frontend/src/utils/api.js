@@ -40,8 +40,8 @@ async function request(method, path, body = null) {
 
 // --- Auth ---
 export const authApi = {
-  signup: (email, password) =>
-    request("POST", "/auth/signup", { email, password }),
+  signup: (email, password, username) =>
+    request("POST", "/auth/signup", { email, password, username }),
 
   login: (email, password) =>
     request("POST", "/auth/login", { email, password }),

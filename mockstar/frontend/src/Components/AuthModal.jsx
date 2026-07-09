@@ -122,13 +122,13 @@ const AuthModal = ({ isOpen, onClose, initialMode = "login", onLoginSuccess, onS
     try {
       if (mode === "signup") {
         // Register user → get token
-        const tokenData = await authApi.signup(email, password);
+        const tokenData = await authApi.signup(email, password, name.trim());
         setToken(tokenData.access_token);
-        // Fetch user info and set default username from email
+        // Fetch user info
         const user = await authApi.me();
         if (onSignupSuccess) onSignupSuccess(name.trim() || email.split("@")[0]);
-        setEmail(""); setPassword(""); setAgreeTerms("");
-        setMode("login");
+        if (onLoginSuccess) onLoginSuccess(user);
+        onClose();
       } else {
         // Log in → get token
         const tokenData = await authApi.login(email, password);
