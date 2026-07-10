@@ -6,11 +6,11 @@ class Settings(BaseSettings):
     PORT: int = 8000
 
     # PostgreSQL Database URL
-    DATABASE_URL: str = "postgresql://postgres:postgres@localhost:5432/mockstar"
+    DATABASE_URL: str
 
     # JWT Authentication settings
     # Default secret key for dev (always change this in production!)
-    JWT_SECRET_KEY: str = "mockstar_super_secret_signing_key_change_me_in_production"
+    JWT_SECRET_KEY: str
     JWT_ALGORITHM: str = "HS256"
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 1440
 
