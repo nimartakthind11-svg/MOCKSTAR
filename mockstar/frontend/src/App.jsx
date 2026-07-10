@@ -243,7 +243,7 @@ function AppInner() {
       className="min-h-screen flex flex-col relative"
       style={{ background: "var(--bg-primary)" }}
     >
-      <Navbar onAuthClick={() => openAuth("login")} onToggleTheme={toggleTheme} theme={theme} />
+      <Navbar onAuthClick={openAuth} onToggleTheme={toggleTheme} theme={theme} />
       <Hero onStartPractice={() => openAuth("signup")} />
       <Landing onStartPractice={() => openAuth("signup")} />
       

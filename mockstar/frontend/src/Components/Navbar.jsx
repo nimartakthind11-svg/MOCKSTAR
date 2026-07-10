@@ -111,7 +111,7 @@ const Navbar = ({ onAuthClick }) => {
 
           <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
             <button
-              onClick={onAuthClick}
+              onClick={() => onAuthClick('login')}
               style={{
                 padding: '8px 18px', background: 'transparent', color: 'var(--text-primary)',
                 border: '1px solid var(--border-strong)', borderRadius: 8,
@@ -124,7 +124,7 @@ const Navbar = ({ onAuthClick }) => {
               Log in
             </button>
             <button
-              onClick={onAuthClick}
+              onClick={() => onAuthClick('signup')}
               style={{
                 padding: '8px 20px', background: 'var(--accent)', color: '#F8F5F2',
                 border: 'none', borderRadius: 8,
