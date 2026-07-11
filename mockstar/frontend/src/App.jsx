@@ -29,7 +29,10 @@ function AppInner() {
   const [sessions, setSessions] = useState([]);
   const [currentSessionScore, setCurrentSessionScore] = useState(null);
   const [currentSessionId, setCurrentSessionId] = useState(null);
+  const [currentSessionIntegrity, setCurrentSessionIntegrity] = useState(100);
+  const [currentSessionIntegrityDetail, setCurrentSessionIntegrityDetail] = useState({ tabSwitchCount: 0, pasteCount: 0 });
   const [aiReport, setAiReport] = useState(null);
+  const [sessionStartError, setSessionStartError] = useState(null);
 
   // ✅ All hooks at the top level — never inside conditionals
   const { theme, toggleTheme } = useTheme();
@@ -137,20 +140,30 @@ function AppInner() {
       return (
         <InterviewSetup
           onBack={() => setCurrentView("resume-upload")}
+          startError={sessionStartError}
           onStart={async (config) => {
+            setSessionStartError(null);
             try {
               const res = await sessionApi.start(config);
+              if (!res || !res.questions || res.questions.length === 0) {
+                throw new Error("Server did not return any interview questions.");
+              }
               setCurrentSessionId(res.session_id);
               setInterviewConfig({
                 ...config,
                 questions: res.questions
               });
+              setCurrentView("interview-session");
             } catch (err) {
               console.error("Failed to start session:", err);
               setCurrentSessionId(null);
-              setInterviewConfig(config);
+              setInterviewConfig(null);
+              setSessionStartError(
+                "We couldn't start your interview session. Please check your connection and try again."
+              );
+              // Deliberately do NOT navigate to interview-session here —
+              // there are no real backend questions to show.
             }
-            setCurrentView("interview-session");
           }}
         />
       );
@@ -160,9 +173,10 @@ function AppInner() {
       return (
         <InterviewSession 
           config={interviewConfig}
-          onEnd={async (transcript) => {
+          onEnd={async (transcript, tabSwitchCount = 0, pasteCount = 0) => {
             let evaluation = null;
             let finalScore = null;
+            let evaluationFailed = false;
 
             if (currentSessionId) {
               try {
@@ -177,13 +191,27 @@ function AppInner() {
                 finalScore = report.score;
               } catch (err) {
                 console.error("Error submitting session:", err);
+                evaluationFailed = true;
               }
             }
 
             const score = finalScore ?? evaluation?.score ?? Math.min(65 + transcript.filter(m => m.role === "candidate").length * 5, 100);
+            // Real integrity score based on detected tab switches and pasted
+            // answers during the session, instead of a hardcoded 100%.
+            // Tab switches cost 10 points each, pastes cost 15 each
+            // (pasting a pre-written answer is a stronger integrity signal
+            // than briefly switching tabs), floored at 0.
+            const integrity = Math.max(0, 100 - tabSwitchCount * 10 - pasteCount * 15);
             setCurrentSessionScore(score);
+            setCurrentSessionIntegrity(integrity);
+            setCurrentSessionIntegrityDetail({ tabSwitchCount, pasteCount });
             setInterviewTranscript(transcript);
-            setAiReport(evaluation || null);
+            setAiReport(
+              evaluation ||
+              (evaluationFailed
+                ? { feedback: "AI evaluation couldn't be generated for this session (the evaluation request failed). Showing an estimated score instead.", strengths: [], weaknesses: [] }
+                : null)
+            );
 
             // Record the completed session in local state
             const newSession = {
@@ -205,6 +233,8 @@ function AppInner() {
         <PerformanceReport
           report={{
             score: currentSessionScore,
+            integrity: currentSessionIntegrity,
+            integrityDetail: currentSessionIntegrityDetail,
             date: new Date().toLocaleDateString("en-US", { year: "numeric", month: "short", day: "numeric" }),
             role: interviewConfig?.customRole || interviewConfig?.interviewType || "Practice Session",
             type: interviewConfig?.interviewType,

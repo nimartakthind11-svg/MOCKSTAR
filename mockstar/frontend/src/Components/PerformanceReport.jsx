@@ -23,6 +23,9 @@ const PerformanceReport = ({ report, onBackToDash, onRetry }) => {
 
   const score = report.score || 0;
   const scoreColor = score >= 80 ? "#3a8f5e" : score >= 60 ? "#C17D2B" : "#B84040";
+  const integrity = report.integrity ?? 100;
+  const integrityColor = integrity >= 90 ? "#3a8f5e" : integrity >= 70 ? "#C17D2B" : "#B84040";
+  const integrityDetail = report.integrityDetail ?? { tabSwitchCount: 0, pasteCount: 0 };
   const radius = 45;
   const circumference = 2 * Math.PI * radius;
   const offset = circumference - (score / 100) * circumference;
@@ -150,7 +153,14 @@ const PerformanceReport = ({ report, onBackToDash, onRetry }) => {
                 </div>
                 <div>
                   <p style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: "0.7rem", color: v("--text-muted"), textTransform: "uppercase", letterSpacing: "0.1em", margin: "0 0 6px" }}>Integrity</p>
-                  <p style={{ fontSize: "1.1rem", fontWeight: 600, color: "#3a8f5e", margin: 0 }}>100%</p>
+                  <p style={{ fontSize: "1.1rem", fontWeight: 600, color: integrityColor, margin: 0 }}>{integrity}%</p>
+                  {(integrityDetail.tabSwitchCount > 0 || integrityDetail.pasteCount > 0) && (
+                    <p style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: "0.65rem", color: v("--text-faint"), margin: "4px 0 0" }}>
+                      {integrityDetail.tabSwitchCount > 0 && `${integrityDetail.tabSwitchCount} tab switch${integrityDetail.tabSwitchCount === 1 ? "" : "es"}`}
+                      {integrityDetail.tabSwitchCount > 0 && integrityDetail.pasteCount > 0 && " · "}
+                      {integrityDetail.pasteCount > 0 && `${integrityDetail.pasteCount} paste${integrityDetail.pasteCount === 1 ? "" : "s"}`}
+                    </p>
+                  )}
                 </div>
               </div>
             </div>

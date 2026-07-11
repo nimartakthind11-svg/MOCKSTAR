@@ -1,5 +1,4 @@
 import React, { useState, useEffect, useRef } from "react";
-import { getQuestionsForSession } from "../utils/questionBank";
 
 const injectStyles = () => {
   if (document.getElementById("isession-styles")) return;
@@ -32,23 +31,58 @@ const InterviewSession = ({ onEnd, config }) => {
   const [isComplete, setIsComplete]         = useState(false);
   const [sessionQuestions, setSessionQuestions] = useState([]);
   const [currentQIndex, setCurrentQIndex]   = useState(0);
+  const [tabSwitchCount, setTabSwitchCount] = useState(0);
+  const [pasteCount, setPasteCount] = useState(0);
   const transcriptRef = useRef(null);
   const initialized   = useRef(false);
   const inputRef      = useRef(null);
+  const VOICE_RECORDING_ENABLED = false;
   const nowTime = () => new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+
+  // Real tab-switch / focus-loss tracking for the integrity indicator.
+  // Every time the tab is hidden (switched away, minimized, etc.) during
+  // an active session, we count it — this feeds the "Integrity" score on
+  // the report instead of a hardcoded value.
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      if (document.hidden && !isComplete) {
+        setTabSwitchCount(prev => prev + 1);
+      }
+    };
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+    return () => document.removeEventListener("visibilitychange", handleVisibilityChange);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isComplete]);
+
+  // Detect pasted answers (candidate pasting a pre-written/AI-generated
+  // response instead of typing their own answer live). Counted separately
+  // from tab switches but rolled into the same integrity score.
+  const handlePaste = () => {
+    if (!isComplete) {
+      setPasteCount(prev => prev + 1);
+    }
+  };
 
   useEffect(() => {
     if (config && messages.length === 0 && !initialized.current) {
       initialized.current = true;
+      // Only ever use backend-provided questions. If they're missing, this
+      // means session creation failed upstream — surface that clearly
+      // instead of silently generating local placeholder questions.
       const qs = config.questions && config.questions.length > 0
         ? config.questions.map((text, idx) => ({ id: `api_${idx}`, text }))
-        : getQuestionsForSession(config);
+        : [];
       setSessionQuestions(qs);
       if (qs.length > 0) {
         setMessages([{ id: Date.now() + Math.random(), role: "interviewer", text: qs[0].text, time: nowTime() }]);
         setCurrentQIndex(1);
       } else {
-        setMessages([{ id: Date.now(), role: "interviewer", text: "No questions available for this configuration.", time: nowTime() }]);
+        setMessages([{
+          id: Date.now(),
+          role: "interviewer",
+          text: "We couldn't load interview questions for this session. Please go back and start a new session.",
+          time: nowTime(),
+        }]);
         setIsComplete(true);
       }
     }
@@ -63,23 +97,28 @@ const InterviewSession = ({ onEnd, config }) => {
     if (!inputValue.trim() || isAiThinking || isComplete) return;
     setMessages(prev => [...prev, { id: Date.now(), role: "candidate", text: inputValue, time: nowTime() }]);
     setInputValue("");
-    setIsAiThinking(true);
-    setTimeout(() => {
-      if (currentQIndex < sessionQuestions.length) {
-        setMessages(prev => [...prev, { id: Date.now() + Math.random(), role: "interviewer", text: sessionQuestions[currentQIndex].text, time: nowTime() }]);
-        setCurrentQIndex(prev => prev + 1);
-      } else {
-        setMessages(prev => [...prev, { id: Date.now() + Math.random(), role: "interviewer", text: "Thank you, that concludes our interview session. Great effort!", time: nowTime() }]);
-        setIsComplete(true);
-      }
-      setIsAiThinking(false);
-    }, 1500);
+    // Questions come pre-loaded from the backend for this session, so there's
+    // no real "thinking" happening here — advance immediately rather than
+    // faking a generation delay.
+    if (currentQIndex < sessionQuestions.length) {
+      setMessages(prev => [...prev, { id: Date.now() + Math.random(), role: "interviewer", text: sessionQuestions[currentQIndex].text, time: nowTime() }]);
+      setCurrentQIndex(prev => prev + 1);
+    } else {
+      setMessages(prev => [...prev, { id: Date.now() + Math.random(), role: "interviewer", text: "Thank you, that concludes our interview session. Great effort!", time: nowTime() }]);
+      setIsComplete(true);
+    }
   };
 
   const toggleRecording = () => {
-    setIsRecording(!isRecording);
-    if (!isRecording) setInputValue("The virtual DOM is a lightweight copy of the actual DOM...");
-  };
+  if (!VOICE_RECORDING_ENABLED) {
+    alert("Voice recording coming soon!");
+    return;
+  }
+
+  setIsRecording(!isRecording);
+
+  // Future Web Speech API implementation
+};
 
   const progressPercent = sessionQuestions.length > 0
     ? Math.round(((currentQIndex - 1) / sessionQuestions.length) * 100)
@@ -149,6 +188,31 @@ const InterviewSession = ({ onEnd, config }) => {
             />
             <span style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: "0.7rem", fontWeight: 600, color: "#D33F3F", letterSpacing: "0.06em", textTransform: "uppercase" }}>LIVE</span>
           </div>
+
+          {(tabSwitchCount > 0 || pasteCount > 0) && (
+            <div
+              title="Tab switches and pasted answers lower your integrity score"
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: 5,
+                padding: "3px 10px",
+                background: "#C17D2B18",
+                border: "1px solid #C17D2B44",
+                borderRadius: 999,
+              }}
+            >
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#C17D2B" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z" />
+                <line x1="12" y1="9" x2="12" y2="13" /><line x1="12" y1="17" x2="12.01" y2="17" />
+              </svg>
+              <span style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: "0.7rem", fontWeight: 600, color: "#C17D2B" }}>
+                {tabSwitchCount > 0 && `Tab switches: ${tabSwitchCount}`}
+                {tabSwitchCount > 0 && pasteCount > 0 && " · "}
+                {pasteCount > 0 && `Pastes: ${pasteCount}`}
+              </span>
+            </div>
+          )}
         </div>
 
         {/* Center: progress */}
@@ -173,7 +237,7 @@ const InterviewSession = ({ onEnd, config }) => {
 
         {/* Right: End button */}
         <button
-          onClick={() => onEnd(messages)}
+          onClick={() => onEnd(messages, tabSwitchCount, pasteCount)}
           style={{
             display: "flex",
             alignItems: "center",
@@ -327,6 +391,7 @@ const InterviewSession = ({ onEnd, config }) => {
                 type="text"
                 value={inputValue}
                 onChange={e => setInputValue(e.target.value)}
+                onPaste={handlePaste}
                 onKeyDown={e => e.key === "Enter" && handleSendMessage()}
                 disabled={isAiThinking || isComplete}
                 placeholder={isComplete ? "Interview complete" : "Type your response…"}

@@ -86,7 +86,18 @@ const PreviewRow = ({ label, value, valueColor }) => (
   </div>
 );
 
-const InterviewSetup = ({ onBack, onStart }) => {
+const InterviewSetup = ({ onBack, onStart, startError }) => {
+  const [isStarting, setIsStarting] = useState(false);
+
+  const handleStart = async (config) => {
+    setIsStarting(true);
+    try {
+      await onStart(config);
+    } finally {
+      setIsStarting(false);
+    }
+  };
+
   injectStyles();
   const [interviewType, setInterviewType] = useState("technical");
   const [difficulty, setDifficulty]       = useState("medium");
@@ -341,28 +352,45 @@ const InterviewSetup = ({ onBack, onStart }) => {
 
                 <div style={{ height: 1, background: v("--border") }} />
 
+                {startError && (
+                  <div
+                    role="alert"
+                    style={{
+                      padding: "10px 14px",
+                      borderRadius: 10,
+                      background: "#D33F3F14",
+                      border: "1px solid #D33F3F44",
+                      color: "#D33F3F",
+                      fontSize: "0.8rem",
+                      lineHeight: 1.5,
+                    }}
+                  >
+                    {startError}
+                  </div>
+                )}
+
                 <button
-                  onClick={() => canStart && onStart && onStart({ interviewType, difficulty, questionCount, focusAreas, customRole })}
-                  disabled={!canStart}
+                  onClick={() => canStart && !isStarting && handleStart({ interviewType, difficulty, questionCount, focusAreas, customRole })}
+                  disabled={!canStart || isStarting}
                   style={{
                     padding: "13px",
                     borderRadius: 12,
                     border: "none",
-                    background: canStart ? v("--accent") : v("--border"),
-                    color: canStart ? "#F8F5F2" : v("--text-muted"),
+                    background: canStart && !isStarting ? v("--accent") : v("--border"),
+                    color: canStart && !isStarting ? "#F8F5F2" : v("--text-muted"),
                     fontFamily: "'Inter', sans-serif",
                     fontWeight: 700,
                     fontSize: "0.88rem",
-                    cursor: canStart ? "pointer" : "not-allowed",
+                    cursor: canStart && !isStarting ? "pointer" : "not-allowed",
                     transition: "all 0.2s ease",
                     width: "100%",
                     letterSpacing: "0.02em",
-                    boxShadow: canStart ? "0 4px 16px var(--accent-glow)" : "none",
+                    boxShadow: canStart && !isStarting ? "0 4px 16px var(--accent-glow)" : "none",
                   }}
-                  onMouseEnter={e => { if (canStart) { e.currentTarget.style.background = "var(--accent-hover)"; e.currentTarget.style.transform = "translateY(-1px)"; e.currentTarget.style.boxShadow = "0 8px 24px var(--accent-glow)"; } }}
-                  onMouseLeave={e => { if (canStart) { e.currentTarget.style.background = "var(--accent)"; e.currentTarget.style.transform = "translateY(0)"; e.currentTarget.style.boxShadow = "0 4px 16px var(--accent-glow)"; } }}
+                  onMouseEnter={e => { if (canStart && !isStarting) { e.currentTarget.style.background = "var(--accent-hover)"; e.currentTarget.style.transform = "translateY(-1px)"; e.currentTarget.style.boxShadow = "0 8px 24px var(--accent-glow)"; } }}
+                  onMouseLeave={e => { if (canStart && !isStarting) { e.currentTarget.style.background = "var(--accent)"; e.currentTarget.style.transform = "translateY(0)"; e.currentTarget.style.boxShadow = "0 4px 16px var(--accent-glow)"; } }}
                 >
-                  Start Interview →
+                  {isStarting ? "Starting…" : "Start Interview →"}
                 </button>
               </div>
             </div>
