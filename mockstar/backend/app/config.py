@@ -13,7 +13,6 @@ class Settings(BaseSettings):
     DATABASE_URL: str
 
     # JWT Authentication settings
-    # Default secret key for dev (always change this in production!)
     JWT_SECRET_KEY: str
     JWT_ALGORITHM: str = "HS256"
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 1440

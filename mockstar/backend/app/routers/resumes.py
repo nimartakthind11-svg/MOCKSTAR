@@ -11,6 +11,40 @@ router = APIRouter(
     tags=["Resume Parsing"]
 )
 
+# --- Upload safety limits ---
+MAX_FILE_SIZE = 10 * 1024 * 1024   # 10 MB hard cap per resume file
+CHUNK_SIZE = 1024 * 1024           # read 1 MB at a time instead of the whole file at once
+
+
+async def read_upload_safely(file: UploadFile, max_size: int = MAX_FILE_SIZE) -> bytes:
+    """
+    Reads an UploadFile in fixed-size chunks and aborts as soon as the
+    configured max size is exceeded, instead of buffering the entire
+    file into memory first (which is what enables a memory-exhaustion DoS).
+    """
+    size = 0
+    chunks = []
+
+    while True:
+        chunk = await file.read(CHUNK_SIZE)
+        if not chunk:
+            break
+        size += len(chunk)
+        if size > max_size:
+            raise HTTPException(
+                status_code=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE,
+                detail=f"File exceeds max allowed size of {max_size // (1024 * 1024)}MB."
+            )
+        chunks.append(chunk)
+
+    if size == 0:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Uploaded file is empty."
+        )
+
+    return b"".join(chunks)
+
 @router.post("/upload", response_model=schemas.ResumeOut, status_code=status.HTTP_201_CREATED)
 async def upload_resume(
     file: UploadFile = File(...),
@@ -29,8 +63,8 @@ async def upload_resume(
         )
 
     try:
-        # Read file bytes in-memory
-        pdf_bytes = await file.read()
+        # Read file bytes safely, enforcing MAX_FILE_SIZE via chunked reads
+        pdf_bytes = await read_upload_safely(file)
         
         # Parse text, email, and skills
         parsed_data = resume_parser.parse(pdf_bytes)
@@ -69,7 +103,12 @@ async def upload_resume(
         db.commit()
         db.refresh(db_resume)
         return db_resume
-        
+
+    except HTTPException:
+        # Let intentional errors (413 too large, 400 empty file, etc.) pass through
+        # untouched instead of being re-wrapped as a 500 below.
+        db.rollback()
+        raise
     except Exception as e:
         db.rollback()
         raise HTTPException(

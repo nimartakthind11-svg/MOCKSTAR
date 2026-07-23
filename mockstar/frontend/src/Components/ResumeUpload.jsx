@@ -30,16 +30,25 @@ const ResumeUpload = ({ onBack, onContinue }) => {
   const [analysisResult, setAnalysisResult] = useState(null);
   const [isAnalyzing, setIsAnalyzing]       = useState(false);
   const [analyzeStep, setAnalyzeStep]       = useState(0);
-  const [uploadError, setUploadError]       = useState("");
+  const [uploadError, setUploadError]       = useState(null); // { title, message } | null
   const fileInputRef = useRef(null);
 
   const steps = ["Reading document…", "Extracting skills…", "Predicting domain…", "Finalising results…"];
+
+  // Detects HTTP 413 (Payload Too Large) across common error shapes
+  // (fetch wrapper w/ .status, axios-style .response.status, or message text).
+  const is413Error = (err) => {
+    const status = err?.status ?? err?.response?.status ?? err?.statusCode;
+    if (status === 413) return true;
+    const msg = String(err?.message || "");
+    return /\b413\b/.test(msg) || /payload too large/i.test(msg) || /entity too large/i.test(msg);
+  };
 
   const handleFileSelect = (file) => {
     if (file && file.type === "application/pdf") {
       setUploadedFile(file);
       setAnalysisResult(null);
-      setUploadError("");
+      setUploadError(null);
       runAnalysis(file);
     }
   };
@@ -68,7 +77,18 @@ const ResumeUpload = ({ onBack, onContinue }) => {
       });
     } catch (err) {
       clearInterval(iv);
-      setUploadError(err.message || "Failed to analyse resume. Make sure the backend is running.");
+      if (is413Error(err)) {
+        setUploadError({
+          title: "Upload failed",
+          message: "File size exceeds the maximum limit of 10 MB. Please upload a PDF smaller than 10 MB.",
+        });
+      } else {
+        setUploadError({
+          title: "Upload failed",
+          message: err.message || "Failed to analyse resume. Make sure the backend is running.",
+        });
+      }
+      setUploadedFile(null);
     } finally {
       setIsAnalyzing(false);
     }
@@ -78,6 +98,15 @@ const ResumeUpload = ({ onBack, onContinue }) => {
   const handleDragOver  = (e) => { e.preventDefault(); setIsDragging(true); };
   const handleDragLeave = ()  => setIsDragging(false);
   const handleInput     = (e) => handleFileSelect(e.target.files[0]);
+
+  const handleTryAgain = () => {
+    setUploadedFile(null);
+    setUploadError(null);
+    setAnalysisResult(null);
+    setIsAnalyzing(false);
+    setAnalyzeStep(0);
+    if (fileInputRef.current) fileInputRef.current.value = "";
+  };
 
   return (
     <div style={{ minHeight: "100vh", background: "var(--bg-primary)", display: "flex", flexDirection: "column", transition: "background 0.3s ease" }}>
@@ -150,7 +179,76 @@ const ResumeUpload = ({ onBack, onContinue }) => {
             </p>
           </div>
 
-          {/* Drop Zone */}
+          {/* Drop Zone / Error State */}
+          {uploadError ? (
+            <div className="ru-fade-up" style={{ animationDelay: "0.1s" }}>
+              <div
+                style={{
+                  border: "2px solid rgba(199,68,58,0.35)",
+                  borderRadius: 20,
+                  padding: "52px 32px",
+                  background: "rgba(199,68,58,0.045)",
+                  display: "flex",
+                  flexDirection: "column",
+                  alignItems: "center",
+                  gap: 16,
+                  boxShadow: "0 0 0 3px rgba(199,68,58,0.08)",
+                }}
+              >
+                <div
+                  style={{
+                    width: 64,
+                    height: 64,
+                    borderRadius: "50%",
+                    background: "rgba(199,68,58,0.12)",
+                    border: "2px solid rgba(199,68,58,0.4)",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                  }}
+                >
+                  <svg width="24" height="24" fill="none" stroke="#C7443A" strokeWidth="2.5" viewBox="0 0 24 24">
+                    <circle cx="12" cy="12" r="10" />
+                    <line x1="12" y1="7.5" x2="12" y2="13" />
+                    <line x1="12" y1="16.5" x2="12.01" y2="16.5" />
+                  </svg>
+                </div>
+                <div style={{ textAlign: "center" }}>
+                  <p style={{ color: "#C7443A", fontWeight: 700, fontSize: 15, margin: "0 0 6px" }}>{uploadError.title}</p>
+                  <p style={{ color: "var(--text-muted)", fontSize: 13, lineHeight: 1.65, margin: 0, maxWidth: 400 }}>
+                    {uploadError.message}
+                  </p>
+                </div>
+                <button
+                  onClick={handleTryAgain}
+                  style={{
+                    display: "inline-flex",
+                    alignItems: "center",
+                    gap: 8,
+                    padding: "12px 28px",
+                    borderRadius: 999,
+                    background: "var(--accent)",
+                    border: "none",
+                    color: "#F8F5F2",
+                    fontFamily: "'Inter', sans-serif",
+                    fontWeight: 600,
+                    fontSize: 13,
+                    cursor: "pointer",
+                    transition: "all 0.25s ease",
+                    boxShadow: "0 4px 16px var(--accent-glow)",
+                    letterSpacing: "0.01em",
+                    marginTop: 4,
+                  }}
+                  onMouseEnter={e => { e.currentTarget.style.background = "var(--accent-hover)"; e.currentTarget.style.transform = "translateY(-2px)"; e.currentTarget.style.boxShadow = "0 10px 28px var(--accent-glow)"; }}
+                  onMouseLeave={e => { e.currentTarget.style.background = "var(--accent)"; e.currentTarget.style.transform = "translateY(0)"; e.currentTarget.style.boxShadow = "0 4px 16px var(--accent-glow)"; }}
+                >
+                  Try Again
+                </button>
+              </div>
+              {/* Keep the file input mounted so it can be reused after reset */}
+              <input ref={fileInputRef} type="file" accept=".pdf" style={{ display: "none" }} onChange={handleInput} />
+            </div>
+          ) : (
           <div
             className="ru-fade-up"
             style={{ animationDelay: "0.1s", cursor: "pointer" }}
@@ -268,6 +366,7 @@ const ResumeUpload = ({ onBack, onContinue }) => {
               )}
             </div>
           </div>
+          )}
 
           {/* Analyzing */}
           {isAnalyzing && (
