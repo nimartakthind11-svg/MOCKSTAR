@@ -77,10 +77,12 @@ class ChatMessage(BaseModel):
 
 class InterviewSessionBase(BaseModel):
     interview_type: str # 'technical', 'behavioral', 'mixed'
-    custom_role: Optional[str] = None
     difficulty: str # 'easy', 'medium', 'hard'
     question_count: int = Field(5, ge=1, le=10)
     focus_areas: Optional[List[str]] = None
+    # Reserved for future role-specific interview generation (e.g., Data Scientist, Backend Developer)
+    custom_role: Optional[str] = None
+
 
 class InterviewSessionCreate(InterviewSessionBase):
     score: Optional[int] = None
