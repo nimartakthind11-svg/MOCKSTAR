@@ -18,11 +18,11 @@ class UserBase(BaseModel):
     email: EmailStr
 
 class UserCreate(UserBase):
-    password: str = Field(..., min_length=6)
+    password: str = Field(..., min_length=6, max_length=72) 
     username: Optional[str] = None
 
 class UserLogin(UserBase):
-    password: str
+    password: str = Field(..., max_length=72)
 
 class UserOut(UserBase):
     id: UUID
