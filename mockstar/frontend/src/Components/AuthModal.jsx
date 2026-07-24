@@ -86,10 +86,10 @@ const EyeIcon = ({ open }) =>
     </svg>
   );
 
-const AuthInput = ({ label, icon, id, type = "text", value, onChange, placeholder, required, rightSlot }) => (
+const AuthInput = ({ label, icon, id, type = "text", value, onChange, placeholder, required, rightSlot, error }) => (
   <div className="auth-field">
     <label htmlFor={id} className="auth-label">{label}</label>
-    <div className="auth-input-wrap">
+    <div className={`auth-input-wrap${error ? " auth-input-wrap--invalid" : ""}`}>
       <span className="auth-input-icon" aria-hidden="true">{icon}</span>
       <input
         id={id}
@@ -98,10 +98,12 @@ const AuthInput = ({ label, icon, id, type = "text", value, onChange, placeholde
         onChange={onChange}
         required={required}
         placeholder={placeholder}
+        aria-invalid={!!error}
         className={`auth-input${rightSlot ? " auth-input--has-action" : ""}`}
       />
       {rightSlot}
     </div>
+    {error && <p className="auth-field-error">{error}</p>}
   </div>
 );
 
@@ -115,7 +117,10 @@ const AuthModal = ({ isOpen, onClose, initialMode = "login", onLoginSuccess, onS
   const [shake, setShake] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [apiError, setApiError] = useState("");
+  const [passwordError, setPasswordError] = useState("");
   const modalRef = useRef(null);
+
+  const MAX_PASSWORD_LENGTH = 72;
 
   useEffect(() => {
     if (isOpen) {
@@ -126,8 +131,17 @@ const AuthModal = ({ isOpen, onClose, initialMode = "login", onLoginSuccess, onS
       setName("");
       setAgreeTerms(false);
       setApiError("");
+      setPasswordError("");
     }
   }, [isOpen, initialMode]);
+
+  useEffect(() => {
+    if (password.length > MAX_PASSWORD_LENGTH) {
+      setPasswordError(`Password cannot exceed ${MAX_PASSWORD_LENGTH} characters.`);
+    } else {
+      setPasswordError("");
+    }
+  }, [password]);
 
   useEffect(() => {
     const handleKeyDown = (e) => { if (e.key === "Escape") onClose(); };
@@ -139,7 +153,12 @@ const AuthModal = ({ isOpen, onClose, initialMode = "login", onLoginSuccess, onS
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!email || !password || (mode === "signup" && (!name || !agreeTerms))) {
+    if (
+      !email ||
+      !password ||
+      password.length > MAX_PASSWORD_LENGTH ||
+      (mode === "signup" && (!name || !agreeTerms))
+    ) {
       setShake(true);
       setTimeout(() => setShake(false), 500);
       return;
@@ -168,9 +187,18 @@ const AuthModal = ({ isOpen, onClose, initialMode = "login", onLoginSuccess, onS
 
       }
     } catch (err) {
-      setApiError(err.message || "Something went wrong. Please try again.");
-      setShake(true);
-      setTimeout(() => setShake(false), 500);
+      const pwFieldError =
+        err.status === 422 && Array.isArray(err.detail)
+          ? err.detail.find((d) => Array.isArray(d.loc) && d.loc.includes("password"))
+          : null;
+
+      if (pwFieldError) {
+        setPasswordError(pwFieldError.msg || `Password must be at most ${MAX_PASSWORD_LENGTH} characters.`);
+      } else {
+        setApiError(err.message || "Something went wrong. Please try again.");
+        setShake(true);
+        setTimeout(() => setShake(false), 500);
+      }
     } finally {
       setIsLoading(false);
     }
@@ -356,6 +384,7 @@ const AuthModal = ({ isOpen, onClose, initialMode = "login", onLoginSuccess, onS
                     placeholder="Enter your password"
                     required
                     rightSlot={passwordToggle}
+                    error={mode === "login" ? passwordError : ""}
                   />
 
                   <div className="auth-forgot-row">
@@ -384,7 +413,7 @@ const AuthModal = ({ isOpen, onClose, initialMode = "login", onLoginSuccess, onS
                     id="signup-name"
                     value={name}
                     onChange={(e) => setName(e.target.value)}
-                    placeholder="Jane Smith"
+                    placeholder="Sarah Kane"
                     required={mode === "signup"}
                   />
 
@@ -395,7 +424,7 @@ const AuthModal = ({ isOpen, onClose, initialMode = "login", onLoginSuccess, onS
                     type="email"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
-                    placeholder="you@example.com"
+                    placeholder="abc@example.com"
                     required={mode === "signup"}
                   />
 
@@ -406,9 +435,10 @@ const AuthModal = ({ isOpen, onClose, initialMode = "login", onLoginSuccess, onS
                     type={showPassword ? "text" : "password"}
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
-                    placeholder="Min. 8 characters"
+                    placeholder="Min. 6 characters"
                     required={mode === "signup"}
                     rightSlot={passwordToggle}
+                    error={mode === "signup" ? passwordError : ""}
                   />
 
                   <div className="auth-terms">

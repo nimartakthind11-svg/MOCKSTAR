@@ -1,5 +1,3 @@
-
-
 /* ══════════════════════════════════════════════════
    DESIGN TOKENS — Light Mode
 ══════════════════════════════════════════════════ */
@@ -39,6 +37,10 @@
   --border:         #EADCD0;
   --border-strong:  #DECFC2;
   --border-focus:   #c45337;
+
+  /* Feedback */
+  --danger:         #ac0f0f;
+  --danger-glow:    0 0 0 3px rgba(241, 31, 31, 0.397);
 
   /* Dark card (for CTA sections) */
   --dark-bg:        #131416;
@@ -819,6 +821,16 @@ html.dark .auth-backdrop {
 }
 .auth-input--has-action {
   padding-right: 44px;
+}
+.auth-input-wrap--invalid .auth-input {
+  border-color: var(--danger);
+  box-shadow: var(--danger-glow);
+}
+.auth-field-error {
+  color: var(--danger);
+  font-size: 12px;
+  margin: 6px 0 0;
+  font-family: 'Inter', sans-serif;
 }
 .auth-password-toggle {
   position: absolute;

@@ -26,12 +26,19 @@ async function request(method, path, body = null) {
 
   if (!res.ok) {
     let errDetail = `HTTP ${res.status}`;
+    let errData = null;
     try {
-      const err = await res.json();
-      errDetail = err.detail || JSON.stringify(err);
+      errData = await res.json();
+      if (Array.isArray(errData.detail)) {
+        // FastAPI/Pydantic validation error format: [{ loc, msg, type }, ...]
+        errDetail = errData.detail.map((d) => d.msg).join(" ");
+      } else {
+        errDetail = errData.detail || JSON.stringify(errData);
+      }
     } catch (_) {}
     const error = new Error(errDetail);
     error.status = res.status;
+    error.detail = errData ? errData.detail : null;
     throw error;
   }
 
@@ -89,4 +96,3 @@ export const sessionApi = {
   getReport: (sessionId) =>
     request("GET", `/sessions/${sessionId}/report`),
 };
-
