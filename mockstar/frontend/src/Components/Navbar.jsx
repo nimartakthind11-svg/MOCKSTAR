@@ -1,10 +1,17 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useTheme } from '../context/ThemeContext';
 
 const Navbar = ({ onAuthClick }) => {
   const { theme, toggleTheme } = useTheme();
   const isDark = theme === 'dark';
   const [activeLink, setActiveLink] = useState('how-it-works');
+  const [scrolled, setScrolled] = useState(false);
+
+  useEffect(() => {
+    const handleScroll = () => setScrolled(window.scrollY > 10);
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
 
   const scrollToSection = (e, id) => {
     e.preventDefault();
@@ -17,7 +24,23 @@ const Navbar = ({ onAuthClick }) => {
   };
 
   return (
-    <div style={{ width: '100%', display: 'flex', justifyContent: 'center', position: 'absolute', top: 0, zIndex: 100 }}>
+    <div style={{
+     width: '100%',
+     display: 'flex',
+     justifyContent: 'center',
+     position: 'fixed',
+     top: 0,
+     left: 0,
+     zIndex: 100,
+     height: scrolled ? '68px' : '80px',
+     background: scrolled ? (isDark ? 'rgba(20, 20, 22, 0.8)' : 'rgba(255, 255, 255, 0.8)') : 'transparent',
+     backdropFilter: scrolled ? 'blur(16px)' : 'none',
+     WebkitBackdropFilter: scrolled ? 'blur(16px)' : 'none',
+     boxShadow: scrolled ? '0 2px 12px rgba(0,0,0,0.06)' : 'none',
+     transition: 'all 0.25s ease',
+   }}
+ >
+
       <nav
         style={{
           width: '100%',
