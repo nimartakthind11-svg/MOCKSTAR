@@ -19,6 +19,7 @@ class Settings(BaseSettings):
 
     # AI / LLM configuration
     GEMINI_API_KEY: str = ""
+    GEMINI_MODEL_NAME: str = "gemini-3.5-flash-lite"
 
     # Pydantic Configuration to read from .env file
     model_config = SettingsConfigDict(

@@ -51,10 +51,8 @@ class InterviewEvaluation(BaseModel):
 class GeminiService:
     def __init__(self):
         self.client = None
-        # gemini-2.5-flash is blocked for new API keys/projects as of mid-2026
-        # (and fully shuts down for everyone on Oct 16, 2026). Using the
-        # current stable GA flash model instead.
-        self.model_name = "gemini-3.5-flash"
+        # Model is configured via settings/.env to allow switching between different Gemini models without code changes.
+        self.model_name = settings.GEMINI_MODEL_NAME
         self.init_error = None
         self._init_client()
 
@@ -119,9 +117,19 @@ class GeminiService:
             data = json.loads(response.text)
             return data.get("questions", [])
             
+        #except Exception as e:
+            #print(f"ERROR: Gemini call failed during question generation: {e}")
+            #raise GeminiRequestError(f"Gemini question generation failed: {e}") from e
+        except json.JSONDecodeError as e:
+            raise GeminiRequestError(
+                "Gemini returned an invalid response."
+        ) from e
+
         except Exception as e:
             print(f"ERROR: Gemini call failed during question generation: {e}")
-            raise GeminiRequestError(f"Gemini question generation failed: {e}") from e
+            raise GeminiRequestError(
+                "The AI service is temporarily unavailable. Please try again."
+            ) from e
 
     def evaluate_interview(self, transcript: List[Dict[str, Any]], focus_domain: Optional[str] = None) -> Dict[str, Any]:
         """
