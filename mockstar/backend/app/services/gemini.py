@@ -13,7 +13,7 @@ from app.config import settings
 _TRANSIENT_STATUS_CODES = {429, 500, 503}
 
 
-def _call_with_retry(fn, *, max_attempts: int = 3, base_delay: float = 1.5):
+def _call_with_retry(fn, *, max_attempts: int = 5, base_delay: float = 2.0):
     last_err = None
     for attempt in range(1, max_attempts + 1):
         try:
@@ -114,7 +114,13 @@ class GeminiService:
             ))
             
             # Parse response text
-            data = json.loads(response.text)
+            try:
+                data = json.loads(response.text)
+            except json.JSONDecodeError:
+                # Fallback: attempt to strip markdown code blocks if present
+                clean_text = response.text.strip().removeprefix("```json").removesuffix("```").strip()
+                data = json.loads(clean_text)
+                
             return data.get("questions", [])
             
         #except Exception as e:
@@ -168,7 +174,13 @@ class GeminiService:
                 ),
             ))
             
-            data = json.loads(response.text)
+            try:
+                data = json.loads(response.text)
+            except json.JSONDecodeError:
+                # Fallback: attempt to strip markdown code blocks if present
+                clean_text = response.text.strip().removeprefix("```json").removesuffix("```").strip()
+                data = json.loads(clean_text)
+                
             return {
                 "score": data.get("score", 70),
                 "feedback": data.get("feedback", ""),
