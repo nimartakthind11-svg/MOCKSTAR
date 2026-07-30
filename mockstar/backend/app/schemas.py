@@ -38,6 +38,8 @@ class ProfileBase(BaseModel):
     username: str
     focus_domain: Optional[str] = None
     core_skills: Optional[str] = None
+    college: Optional[str] = None
+    course: Optional[str] = None
     is_built: bool = False
 
 class ProfileCreate(ProfileBase):
@@ -49,6 +51,7 @@ class ProfileUpdate(ProfileBase):
 class ProfileOut(ProfileBase):
     id: UUID
     user_id: UUID
+    email: Optional[str] = None
     created_at: datetime
     updated_at: datetime
 

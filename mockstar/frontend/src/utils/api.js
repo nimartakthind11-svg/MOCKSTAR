@@ -62,8 +62,8 @@ export const authApi = {
 export const profileApi = {
   get: () => request("GET", "/profile"),
 
-  update: (username, focus_domain, core_skills) =>
-    request("PUT", "/profile", { username, focus_domain, core_skills }),
+  update: (username, focus_domain, core_skills, college, course) =>
+    request("PUT", "/profile", { username, focus_domain, core_skills, college, course }),
 };
 
 // --- Resumes ---

@@ -26,6 +26,8 @@ class Profile(Base):
     username = Column(String(255), nullable=False)
     focus_domain = Column(String(255), nullable=True)
     core_skills = Column(Text, nullable=True)
+    college = Column(String(255), nullable=True)
+    course = Column(String(255), nullable=True)
     is_built = Column(Boolean, default=False)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())

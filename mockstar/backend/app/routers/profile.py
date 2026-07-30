@@ -27,7 +27,9 @@ def get_profile(
         db.commit()
         db.refresh(profile)
         
-    return profile
+    profile_out = schemas.ProfileOut.model_validate(profile)
+    profile_out.email = current_user.email
+    return profile_out
 
 
 @router.put("", response_model=schemas.ProfileOut)
@@ -48,8 +50,13 @@ def update_profile(
     profile.username = profile_data.username
     profile.focus_domain = profile_data.focus_domain
     profile.core_skills = profile_data.core_skills
+    profile.college = profile_data.college
+    profile.course = profile_data.course
     profile.is_built = True
     
     db.commit()
     db.refresh(profile)
-    return profile
+    
+    profile_out = schemas.ProfileOut.model_validate(profile)
+    profile_out.email = current_user.email
+    return profile_out

@@ -456,85 +456,180 @@ const SessionsTab = ({ sessions }) => (
 );
 
 /* ── Profile Tab ── */
-const ProfileTab = ({ userProfile, onEditProfile }) => (
-  <div className="animate-fadeIn" style={{ display: "flex", flexDirection: "column", gap: 24, paddingBottom: 48 }}>
-    <div>
-      <p style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 11, textTransform: "uppercase", letterSpacing: "0.12em", color: "var(--accent)", marginBottom: 8 }}>Account</p>
-      <h2 style={{ fontFamily: "'Fraunces', serif", fontSize: 30, fontWeight: 500, color: "var(--text-primary)", margin: 0, letterSpacing: "-0.02em" }}>My Profile</h2>
-    </div>
+const ProfileTab = ({ userProfile, onEditProfile }) => {
+  const isBuilt = userProfile?.isBuilt;
+  return (
+    <div className="animate-fadeIn" style={{ display: "flex", flexDirection: "column", gap: 32, paddingBottom: 48 }}>
+      {/* Header Section */}
+      <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+        <p style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 12, textTransform: "uppercase", letterSpacing: "0.15em", color: "var(--accent)", fontWeight: 600 }}>Account</p>
+        <h2 style={{ fontFamily: "'Fraunces', serif", fontSize: "clamp(2rem, 4vw, 2.5rem)", fontWeight: 500, color: "var(--text-primary)", margin: 0, letterSpacing: "-0.02em", lineHeight: 1.2 }}>My Profile</h2>
+      </div>
 
-    <div style={{ background: "var(--bg-card)", border: "1px solid var(--border)", borderRadius: 24, padding: "32px", display: "flex", flexDirection: "column", gap: 24, boxShadow: "var(--shadow-sm)" }}>
-      {/* Avatar */}
-      <div style={{ display: "flex", alignItems: "center", gap: 18 }}>
-        <div
-          style={{
-            width: 68,
-            height: 68,
-            borderRadius: "50%",
-            background: "linear-gradient(135deg, var(--accent) 0%, var(--accent-light) 100%)",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            color: "#F8F5F2",
-            fontSize: 26,
-            fontWeight: 700,
-            fontFamily: "'Fraunces', serif",
-            boxShadow: "0 0 0 4px var(--accent-soft), 0 4px 16px var(--accent-glow)",
-            flexShrink: 0,
-          }}
-        >
-          {(userProfile?.username || "U")[0].toUpperCase()}
-        </div>
-        <div>
-          <p style={{ fontSize: 18, fontWeight: 600, color: "var(--text-primary)", margin: "0 0 4px", fontFamily: "'Fraunces', serif" }}>
-            {userProfile?.username || "User"}
-          </p>
-          <div style={{ display: "inline-flex", alignItems: "center", gap: 5 }}>
-            <span
-              style={{
-                width: 7,
-                height: 7,
+      {/* Profile Card */}
+      <div style={{
+        position: "relative",
+        background: "var(--bg-card)",
+        border: "1px solid var(--border)",
+        borderRadius: 32,
+        padding: "48px",
+        overflow: "hidden",
+        boxShadow: "var(--shadow-lg)",
+        display: "flex",
+        flexDirection: "column",
+        gap: 40
+      }}>
+        {/* Decorative Background Blob */}
+        <div style={{
+          position: "absolute",
+          top: -100,
+          right: -100,
+          width: 300,
+          height: 300,
+          background: "radial-gradient(circle, var(--accent-alpha-12) 0%, transparent 70%)",
+          borderRadius: "50%",
+          pointerEvents: "none",
+        }} />
+
+        {/* Top Profile Info Section */}
+        <div style={{ display: "flex", alignItems: "center", gap: 28, zIndex: 1 }}>
+          {/* Avatar with Glow */}
+          <div style={{ position: "relative" }}>
+            <div style={{
+              position: "absolute",
+              inset: -8,
+              background: "linear-gradient(135deg, var(--accent-alpha-40), transparent)",
+              borderRadius: "50%",
+              filter: "blur(12px)",
+              opacity: 0.8,
+            }} />
+            <div style={{
+              width: 100,
+              height: 100,
+              borderRadius: "50%",
+              background: "linear-gradient(135deg, var(--accent) 0%, var(--accent-light) 100%)",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              color: "#FFF",
+              fontSize: 36,
+              fontWeight: 700,
+              fontFamily: "'Fraunces', serif",
+              border: "4px solid var(--bg-card)",
+              position: "relative",
+              boxShadow: "var(--shadow-md)"
+            }}>
+              {(userProfile?.username || "U")[0].toUpperCase()}
+            </div>
+          </div>
+          
+          {/* User Meta */}
+          <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+            <h3 style={{ fontSize: 28, fontWeight: 600, color: "var(--text-primary)", margin: 0, fontFamily: "'Fraunces', serif", letterSpacing: "-0.01em" }}>
+              {userProfile?.username || "User"}
+            </h3>
+            <div style={{ display: "inline-flex", alignItems: "center", gap: 8, background: "var(--bg-subtle)", padding: "6px 12px", borderRadius: 999, width: "fit-content", border: "1px solid var(--border-strong)" }}>
+              <span style={{
+                width: 8,
+                height: 8,
                 borderRadius: "50%",
-                background: userProfile?.isBuilt ? "#3a8f5e" : "var(--accent)",
-                display: "inline-block",
-              }}
-            />
-            <span style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 11, color: "var(--text-muted)", textTransform: "uppercase", letterSpacing: "0.08em" }}>
-              {userProfile?.isBuilt ? "Profile complete" : "Profile incomplete"}
-            </span>
+                background: isBuilt ? "#10b981" : "var(--accent)",
+                boxShadow: `0 0 8px ${isBuilt ? "rgba(16, 185, 129, 0.4)" : "var(--accent-glow)"}`,
+              }} />
+              <span style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 11, color: "var(--text-primary)", textTransform: "uppercase", letterSpacing: "0.1em", fontWeight: 600 }}>
+                {isBuilt ? "Profile complete" : "Profile incomplete"}
+              </span>
+            </div>
           </div>
         </div>
-      </div>
 
-      <div style={{ height: 1, background: "var(--border)" }} />
+        {/* Divider */}
+        <div style={{ height: 1, background: "linear-gradient(90deg, transparent, var(--border), transparent)", opacity: 0.8 }} />
 
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", gap: 20 }}>
-        {[
-          { label: "Focus Domain", value: userProfile?.focusDomain || "Not set" },
-          { label: "Core Skills", value: userProfile?.coreSkills || "Not set" },
-        ].map(({ label, value }) => (
-          <div key={label}>
-            <span style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 10, textTransform: "uppercase", letterSpacing: "0.1em", color: "var(--text-muted)", display: "block", marginBottom: 6 }}>
-              {label}
-            </span>
-            <span style={{ fontSize: 15, fontWeight: 500, color: "var(--text-primary)" }}>{value}</span>
-          </div>
-        ))}
-      </div>
+        {/* Detailed Stats / Info */}
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))", gap: 32, zIndex: 1 }}>
+          {[
+            { 
+              label: "Email", 
+              value: userProfile?.email || "Not set",
+              icon: <svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path><polyline points="22,6 12,13 2,6"></polyline></svg>
+            },
+            { 
+              label: "Focus Domain", 
+              value: userProfile?.focusDomain || "Not set",
+              icon: <svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M12 2v4M12 18v4M4.22 4.22l2.83 2.83M16.95 16.95l2.83 2.83M2 12h4M18 12h4M4.22 19.78l2.83-2.83M16.95 7.05l2.83-2.83"/></svg>
+            },
+            { 
+              label: "Core Skills", 
+              value: userProfile?.coreSkills || "Not set",
+              icon: <svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/></svg>
+            },
+            { 
+              label: "College / University", 
+              value: userProfile?.college || "Not set",
+              icon: <svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M22 10v6M2 10l10-5 10 5-10 5z"/><path d="M6 12v5c3 3 9 3 12 0v-5"/></svg>
+            },
+            { 
+              label: "Course", 
+              value: userProfile?.course || "Not set",
+              icon: <svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
+            },
+          ].map(({ label, value, icon }) => (
+            <div key={label} style={{ 
+              display: "flex", 
+              flexDirection: "column", 
+              gap: 12, 
+              background: "var(--bg-subtle)", 
+              padding: "24px", 
+              borderRadius: 20,
+              border: "1px solid var(--border-strong)",
+              transition: "transform 0.2s ease, box-shadow 0.2s ease",
+            }}
+            onMouseEnter={e => { e.currentTarget.style.transform = "translateY(-2px)"; e.currentTarget.style.boxShadow = "var(--shadow-md)"; e.currentTarget.style.borderColor = "var(--accent-alpha-50)"; }}
+            onMouseLeave={e => { e.currentTarget.style.transform = "translateY(0)"; e.currentTarget.style.boxShadow = "none"; e.currentTarget.style.borderColor = "var(--border-strong)"; }}
+            >
+              <div style={{ display: "flex", alignItems: "center", gap: 10, color: "var(--accent)" }}>
+                {icon}
+                <span style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 12, textTransform: "uppercase", letterSpacing: "0.1em", fontWeight: 700 }}>
+                  {label}
+                </span>
+              </div>
+              <span style={{ fontSize: 16, fontWeight: 500, color: "var(--text-primary)", lineHeight: 1.5 }}>{value}</span>
+            </div>
+          ))}
+        </div>
 
-      <div>
-        <button
-          onClick={onEditProfile}
-          style={{ display: "inline-flex", alignItems: "center", gap: 8, padding: "12px 24px", background: "var(--accent)", color: "#F8F5F2", border: "none", borderRadius: 999, fontSize: 14, fontWeight: 600, cursor: "pointer", transition: "all 0.2s", boxShadow: "0 4px 16px var(--accent-glow)" }}
-          onMouseEnter={e => { e.currentTarget.style.background = "var(--accent-hover)"; e.currentTarget.style.transform = "translateY(-1px)"; }}
-          onMouseLeave={e => { e.currentTarget.style.background = "var(--accent)"; e.currentTarget.style.transform = "translateY(0)"; }}
-        >
-          {userProfile?.isBuilt ? "Edit Profile" : "Build Profile"}
-        </button>
+        {/* Call to Action */}
+        <div style={{ zIndex: 1, marginTop: 8 }}>
+          <button
+            onClick={onEditProfile}
+            style={{ 
+              display: "inline-flex", 
+              alignItems: "center", 
+              justifyContent: "center",
+              gap: 10, 
+              padding: "16px 36px", 
+              background: "linear-gradient(135deg, var(--accent) 0%, var(--accent-hover) 100%)", 
+              color: "#FFF", 
+              border: "none", 
+              borderRadius: 999, 
+              fontSize: 16, 
+              fontWeight: 600, 
+              cursor: "pointer", 
+              transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)", 
+              boxShadow: "0 8px 24px var(--accent-glow)" 
+            }}
+            onMouseEnter={e => { e.currentTarget.style.transform = "translateY(-2px) scale(1.02)"; e.currentTarget.style.boxShadow = "0 12px 32px var(--accent-glow)"; }}
+            onMouseLeave={e => { e.currentTarget.style.transform = "translateY(0) scale(1)"; e.currentTarget.style.boxShadow = "0 8px 24px var(--accent-glow)"; }}
+          >
+            {isBuilt ? "Edit Profile" : "Build Profile"}
+            <svg width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+          </button>
+        </div>
       </div>
     </div>
-  </div>
-);
+  );
+};
 
 /* ── Dashboard Root ── */
 const Dashboard = ({ onLogout, userProfile, onEditProfile, onUploadResume, onStartSession, sessions = [] }) => {
