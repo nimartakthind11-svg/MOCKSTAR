@@ -17,9 +17,12 @@ function AppInner() {
   const [currentView, setCurrentView] = useState("dashboard");
   const [signupName, setSignupName] = useState("");
   const [userProfile, setUserProfile] = useState({
+    email: "",
     username: "",
     focusDomain: "",
     coreSkills: "",
+    college: "",
+    course: "",
     isBuilt: false
   });
   const [isAuthOpen, setIsAuthOpen] = useState(false);
@@ -48,9 +51,12 @@ function AppInner() {
     profileApi.get()
       .then((profile) => {
         setUserProfile({
+          email: profile.email || "",
           username: profile.username || "",
           focusDomain: profile.focus_domain || "",
           coreSkills: profile.core_skills || "",
+          college: profile.college || "",
+          course: profile.course || "",
           isBuilt: profile.is_built || false,
         });
         setIsLoggedIn(true);
@@ -92,9 +98,12 @@ function AppInner() {
     profileApi.get()
       .then((profile) => {
         setUserProfile({
+          email: profile.email || user.email || "",
           username: profile.username || signupName || user.email?.split("@")[0] || "User",
           focusDomain: profile.focus_domain || "",
           coreSkills: profile.core_skills || "",
+          college: profile.college || "",
+          course: profile.course || "",
           isBuilt: profile.is_built || false,
         });
         setIsLoggedIn(true);
@@ -126,7 +135,7 @@ function AppInner() {
   if (isLoggedIn) {
     if (currentView === "build-profile") {
       return (
-        <BuildProfile 
+        <BuildProfile
           initialProfile={userProfile}
           onSave={(profileData) => {
             setUserProfile(profileData);
@@ -169,8 +178,8 @@ function AppInner() {
               setCurrentSessionId(null);
               setInterviewConfig(null);
               setSessionStartError(
-                err.message && err.message !== "Internal Server Error" 
-                  ? err.message 
+                err.message && err.message !== "Internal Server Error"
+                  ? err.message
                   : "Our AI service is a bit busy right now, please try again in a minute."
               );
               // Deliberately do NOT navigate to interview-session here —
@@ -183,7 +192,7 @@ function AppInner() {
 
     if (currentView === "interview-session") {
       return (
-        <InterviewSession 
+        <InterviewSession
           config={interviewConfig}
           isSubmitting={isSubmittingEnd}
           onEnd={async (transcript, tabSwitchCount = 0, pasteCount = 0) => {
@@ -280,7 +289,7 @@ function AppInner() {
     }
 
     return (
-      <Dashboard 
+      <Dashboard
         userProfile={userProfile}
         sessions={sessions}
         onLogout={handleLogout}
@@ -303,10 +312,10 @@ function AppInner() {
       <Navbar onAuthClick={openAuth} onToggleTheme={toggleTheme} theme={theme} />
       <Hero onStartPractice={() => openAuth("signup")} />
       <Landing onStartPractice={() => openAuth("signup")} />
-      
-      <AuthModal 
-        isOpen={isAuthOpen} 
-        onClose={() => setIsAuthOpen(false)} 
+
+      <AuthModal
+        isOpen={isAuthOpen}
+        onClose={() => setIsAuthOpen(false)}
         initialMode={authMode}
         onSignupSuccess={handleSignupSuccess}
         onLoginSuccess={handleLoginSuccess}
