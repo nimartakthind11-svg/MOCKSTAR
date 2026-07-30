@@ -52,7 +52,14 @@ def update_profile(
     profile.core_skills = profile_data.core_skills
     profile.college = profile_data.college
     profile.course = profile_data.course
-    profile.is_built = True
+    
+    profile.is_built = bool(
+        profile.username and profile.username.strip() and
+        profile.focus_domain and profile.focus_domain.strip() and
+        profile.core_skills and profile.core_skills.strip() and
+        profile.college and profile.college.strip() and
+        profile.course and profile.course.strip()
+    )
     
     db.commit()
     db.refresh(profile)

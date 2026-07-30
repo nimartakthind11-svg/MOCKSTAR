@@ -13,7 +13,7 @@ const BuildProfile = ({ initialProfile, onSave, onCancel }) => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!username.trim() || !focusDomain.trim() || !coreSkills.trim()) {
+    if (!username.trim()) {
       setShake(true);
       setTimeout(() => setShake(false), 500);
       return;
@@ -283,7 +283,7 @@ const BuildProfile = ({ initialProfile, onSave, onCancel }) => {
                 id={id}
                 value={value}
                 onChange={e => set(e.target.value)}
-                required={!disabled}
+                required={id === "username"}
                 disabled={disabled}
                 placeholder={placeholder}
                 style={{
