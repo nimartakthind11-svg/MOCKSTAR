@@ -17,6 +17,8 @@ CREATE TABLE IF NOT EXISTS profiles (
     username VARCHAR(255) NOT NULL,
     focus_domain VARCHAR(255),
     core_skills TEXT,
+    college VARCHAR(255),
+    course VARCHAR(255),
     is_built BOOLEAN DEFAULT FALSE,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
@@ -43,6 +45,7 @@ CREATE TABLE IF NOT EXISTS interview_sessions (
     focus_areas JSONB, -- e.g. ["React", "System Design"]
     score INTEGER, -- overall score (e.g. 85)
     transcript JSONB, -- list of chat messages: [{"role": "interviewer", "text": "...", "time": "10:15 AM"}, ...]
+    status VARCHAR(20) NOT NULL DEFAULT 'in_progress',
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );

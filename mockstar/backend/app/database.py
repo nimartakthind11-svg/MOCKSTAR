@@ -11,23 +11,15 @@ is_prod = settings.ENVIRONMENT.lower() == "production"
 if is_prod and (not DATABASE_URL or DATABASE_URL.startswith("sqlite")):
     raise RuntimeError("SQLite is not allowed in production. Please configure a valid PostgreSQL DATABASE_URL.")
 
-try:
-    if DATABASE_URL.startswith("sqlite"):
-        connect_args["check_same_thread"] = False
-    
-    engine = create_engine(DATABASE_URL, connect_args=connect_args)
-    # Verify the connection works
-    with engine.connect() as conn:
-        pass
-    print("Database: Connected to PostgreSQL database successfully.")
-except Exception as e:
-    if is_prod:
-        raise RuntimeError(f"Database connection failed in production: {e}") from e
-    print(f"Database: Warning - Connection failed ({e}). Falling back to local SQLite database.")
-    # Place sqlite db in the backend directory
-    sqlite_path = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "mockstar.db")
-    DATABASE_URL = f"sqlite:///{sqlite_path}"
-    engine = create_engine(DATABASE_URL, connect_args={"check_same_thread": False})
+if DATABASE_URL.startswith("sqlite"):
+    connect_args["check_same_thread"] = False
+
+# create_engine() does not open a connection - it lazily configures a
+# connection pool. No I/O happens here, so this is safe to run at import
+# time. Actual connectivity is verified during FastAPI's startup/lifespan
+# phase (see main.py), with retries, so the app doesn't crash on import
+# if the database is still starting up.
+engine = create_engine(DATABASE_URL, connect_args=connect_args)
 
 # Create session factory
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)

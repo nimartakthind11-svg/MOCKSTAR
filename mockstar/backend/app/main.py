@@ -1,7 +1,11 @@
+import asyncio
+from contextlib import asynccontextmanager
+
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.responses import JSONResponse
+from sqlalchemy import text
 from app.database import engine, Base
 from app.routers import auth, profile, resumes, sessions
 from app import models
@@ -23,19 +27,44 @@ class LimitUploadSizeMiddleware(BaseHTTPMiddleware):
             )
         return await call_next(request)
 
-# Automatically create database tables from SQLAlchemy models
-try:
-    print("Database: Auto-creating tables if they do not exist...")
-    Base.metadata.create_all(bind=engine)
-    print("Database: Tables initialized successfully.")
-except Exception as e:
-    print(f"Database: Warning - Tables auto-creation skipped or failed ({e}).")
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    # Verify database connectivity on startup (not at import time), with
+    # retries so the app doesn't crash if the database is still starting up
+    # (common in Docker Compose, Railway, Render, Kubernetes, etc).
+    max_attempts = 5
+    delay_seconds = 2
+    for attempt in range(1, max_attempts + 1):
+        try:
+            with engine.connect() as conn:
+                conn.execute(text("SELECT 1"))
+            print("Database: Connected successfully.")
+            break
+        except Exception as e:
+            if attempt == max_attempts:
+                raise RuntimeError(
+                    f"Database connection failed after {max_attempts} attempts: {e}"
+                ) from e
+            print(f"Database: attempt {attempt}/{max_attempts} failed ({e}). Retrying in {delay_seconds}s...")
+            await asyncio.sleep(delay_seconds)
+
+    # Automatically create database tables from SQLAlchemy models
+    try:
+        print("Database: Auto-creating tables if they do not exist...")
+        Base.metadata.create_all(bind=engine)
+        print("Database: Tables initialized successfully.")
+    except Exception as e:
+        print(f"Database: Warning - Tables auto-creation skipped or failed ({e}).")
+
+    yield
+
 
 # Initialize FastAPI App
 app = FastAPI(
     title="Mockstar AI Backend",
     description="Python FastAPI REST API server for Mockstar Resume Parser and AI Mock Interviewer",
-    version="1.0.0"
+    version="1.0.0",
+    lifespan=lifespan,
 )
 
 # Configure CORS (Cross-Origin Resource Sharing)
