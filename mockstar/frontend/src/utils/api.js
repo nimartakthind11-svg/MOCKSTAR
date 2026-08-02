@@ -4,7 +4,7 @@
  * JWT token is stored in localStorage and attached automatically.
  */
 
-const BASE_URL = "/api";
+const BASE_URL = import.meta.env.VITE_API_URL || "/api";
 
 // --- Token helpers ---
 export const getToken = () => localStorage.getItem("mockstar_token");
